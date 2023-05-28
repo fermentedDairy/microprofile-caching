@@ -5,9 +5,11 @@ import org.apache.commons.lang3.StringUtils;
 import org.fermented.dairy.microprofile.caching.exceptions.NoCacheKeyException;
 import org.fermented.dairy.microprofile.caching.annotations.CacheKey;
 import org.fermented.dairy.microprofile.caching.annotations.Cachable;
+import org.fermented.dairy.microprofile.caching.interfaces.CacheProvider;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
+import java.util.Map;
 
 public final class CacheInterceptorUtils {
     private CacheInterceptorUtils(){}
@@ -15,7 +17,7 @@ public final class CacheInterceptorUtils {
     public static Object getCacheKeyFromParams(InvocationContext invocationContext){
         Method method = invocationContext.getMethod();
         if(method.getParameterCount() == 1) { //There is only one param, use it as the cache key
-            return method.getParameters()[1];
+            return invocationContext.getParameters()[0];
         }
         Annotation[][] paramAnnotations = method.getParameterAnnotations();
         for (int outerIndex = 0; outerIndex < paramAnnotations.length; outerIndex++){
@@ -45,6 +47,11 @@ public final class CacheInterceptorUtils {
             return defaultTTL;
         }
         return cachableAnnotation.defaultTtl();
+    }
+
+    public static boolean hasKeyNotNull(Map<String, CacheProvider>  map, String key){
+        return (map.containsKey(key) && map.get(key) != null);
+
     }
 
 }

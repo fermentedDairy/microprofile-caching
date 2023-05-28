@@ -9,4 +9,6 @@ public interface CacheProvider {
     <T, K> boolean putIntoCache(K key, T value, String cacheName, long ttl);
 
     <K> boolean invalidateCacheEntry(K key, String cacheName);
+
+    String getProviderName();
 }

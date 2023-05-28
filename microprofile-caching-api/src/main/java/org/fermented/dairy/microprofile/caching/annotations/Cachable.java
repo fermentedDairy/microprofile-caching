@@ -26,7 +26,7 @@ public @interface Cachable {
      * </pre>
      * before using 1000L. Any cache entries older than 1000 ms will either be removed or considered a cache miss
      */
-    long defaultTtl() default 1000*60*60*5; //5 minutes
+    long defaultTtl() default 300000; //5 minutes
 
     /**
      * The name of the cache, if left blank, will use the class name

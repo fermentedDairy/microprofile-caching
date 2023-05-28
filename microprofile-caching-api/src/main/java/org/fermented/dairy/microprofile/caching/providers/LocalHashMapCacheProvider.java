@@ -13,7 +13,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import jakarta.enterprise.context.ApplicationScoped;
 
 @ApplicationScoped
-@org.fermented.dairy.microprofile.caching.annotations.CacheProvider(name = "LocalHashMapCache")
 public class LocalHashMapCacheProvider implements CacheProvider {
 
     private static final Map<String, Map<Object, SoftReference<CacheEntry>>> CACHES = new ConcurrentHashMap<>();
@@ -52,6 +51,11 @@ public class LocalHashMapCacheProvider implements CacheProvider {
         Map<Object, SoftReference<CacheEntry>> cache = CACHES.get(cacheName);
         cache.remove(key);
         return true;
+    }
+
+    @Override
+    public String getProviderName() {
+        return "LocalHashMapCache";
     }
 
     private record CacheEntry(LocalDateTime expiry, Object value) {

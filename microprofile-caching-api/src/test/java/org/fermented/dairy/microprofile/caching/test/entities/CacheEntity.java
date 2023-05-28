@@ -10,7 +10,7 @@ import org.fermented.dairy.microprofile.caching.annotations.CacheKey;
 @Builder
 @Getter
 @EqualsAndHashCode
-@Cachable(cacheName = "TestCacheProvider")
+@Cachable(cacheName = "TestCacheName", cacheProvider = "TestCacheProvider")
 public class CacheEntity {
 
     @CacheKey

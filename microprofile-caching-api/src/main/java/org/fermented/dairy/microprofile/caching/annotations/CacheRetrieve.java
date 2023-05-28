@@ -13,4 +13,5 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.RUNTIME)
 public @interface CacheRetrieve {
 
+    Class<?> optionalWrappedClass() default Object.class;
 }

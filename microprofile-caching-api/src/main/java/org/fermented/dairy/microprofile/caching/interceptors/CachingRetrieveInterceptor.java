@@ -1,6 +1,7 @@
 package org.fermented.dairy.microprofile.caching.interceptors;
 
-import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.annotation.Priority;
+import jakarta.enterprise.context.Dependent;
 import jakarta.interceptor.AroundInvoke;
 import jakarta.interceptor.Interceptor;
 import jakarta.interceptor.InvocationContext;
@@ -15,8 +16,9 @@ import static org.fermented.dairy.microprofile.caching.utils.CacheInterceptorUti
 import static org.fermented.dairy.microprofile.caching.utils.CacheInterceptorUtils.getCacheName;
 import static org.fermented.dairy.microprofile.caching.utils.CacheInterceptorUtils.getTTL;
 
-@ApplicationScoped
+@Dependent
 @Interceptor
+@Priority(Integer.MAX_VALUE)
 @CacheRetrieve
 @Log
 public class CachingRetrieveInterceptor extends AbstractCachingInterceptor{
@@ -25,6 +27,12 @@ public class CachingRetrieveInterceptor extends AbstractCachingInterceptor{
     public Object doCacheRetrieve(InvocationContext invocationContext) throws Exception {
 
         Class<?> cacheClass = invocationContext.getMethod().getReturnType();
+        boolean isOptional = false;
+        if (cacheClass == Optional.class)
+        {
+            cacheClass = invocationContext.getMethod().getReturnType();
+            isOptional = true;
+        }
         CacheProvider cacheProvider = getProvider(cacheClass);
         Object cacheKey = getCacheKeyFromParams(invocationContext);
         String cacheName = getCacheName(cacheClass);
@@ -32,12 +40,20 @@ public class CachingRetrieveInterceptor extends AbstractCachingInterceptor{
         if(cachedResultOptional.isPresent()) {
             log.log(Level.FINE,
                     () -> String.format("Cache hit, cache name: %s, cache key: %s", cacheName, cacheKey));
+            if(isOptional){
+                return cachedResultOptional;
+            }
+
             return cachedResultOptional.get();
         }
         log.log(Level.FINE,
                 () -> String.format("Cache miss, cache name: %s, cache key: %s", cacheName, cacheKey));
         Object result = invocationContext.proceed();
-        cacheProvider.putIntoCache(cacheKey, result, cacheName, getTTL(cacheClass, getDefaultTTL()));
+        if(isOptional && ((Optional<?>)result).isPresent()) {
+            cacheProvider.putIntoCache(cacheKey, ((Optional<?>)result).get(), cacheName, getTTL(cacheClass, getDefaultTTL()));
+        } else if (result != null){
+            cacheProvider.putIntoCache(cacheKey, result, cacheName, getTTL(cacheClass, getDefaultTTL()));
+        }
         return result;
     }
 
