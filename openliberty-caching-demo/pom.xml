@@ -8,7 +8,7 @@
         <artifactId>microprofile-caching</artifactId>
         <version>1.0-SNAPSHOT</version>
     </parent>
-    <artifactId>openliberty-test</artifactId>
+    <artifactId>openliberty-caching-demo</artifactId>
     <packaging>war</packaging>
 
     <properties>
@@ -18,8 +18,9 @@
         <jaeger.client.version>1.5.0</jaeger.client.version>
         <slf4j.jdk.version>1.7.30</slf4j.jdk.version>
         <maven.compiler.source>11</maven.compiler.source>
-        <final.name>openliberty</final.name>
+        <final.name>openliberty-cache-demo</final.name>
         <slf4j.api.version>1.7.30</slf4j.api.version>
+        <lombok.version>1.18.24</lombok.version>
     </properties>
 
     <dependencies>
@@ -46,6 +47,50 @@
             <artifactId>microprofile-config-api</artifactId>
             <version>3.0</version>
         </dependency>
+        <dependency>
+            <groupId>org.fermented.dairy.microprofile.caching</groupId>
+            <artifactId>microprofile-caching-api</artifactId>
+            <version>1.0-SNAPSHOT</version>
+        </dependency>
+        <dependency>
+            <groupId>jakarta.validation</groupId>
+            <artifactId>jakarta.validation-api</artifactId>
+            <version>3.0.0</version>
+        </dependency>
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+            <version>${lombok.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>jakarta.enterprise</groupId>
+            <artifactId>jakarta.enterprise.cdi-api</artifactId>
+            <version>3.0.0</version>
+        </dependency>
+        <dependency>
+            <groupId>org.eclipse.microprofile.config</groupId>
+            <artifactId>microprofile-config-api</artifactId>
+            <version>3.0</version>
+        </dependency>
+        <dependency>
+            <groupId>org.microshed</groupId>
+            <artifactId>microshed-testing-testcontainers</artifactId>
+            <version>0.9.1</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter</artifactId>
+            <version>5.9.2</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.testcontainers</groupId>
+            <artifactId>testcontainers</artifactId>
+            <version>1.18.1</version>
+            <scope>test</scope>
+        </dependency>
+
 
     </dependencies>
 
@@ -95,6 +140,53 @@
                                 <app.context.root>/</app.context.root>
                             </bootstrapProperties>
                         </configuration>
+                    </plugin>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-compiler-plugin</artifactId>
+                        <version>3.11.0</version>
+                        <configuration>
+                            <annotationProcessorPaths>
+                                <path>
+                                    <groupId>org.projectlombok</groupId>
+                                    <artifactId>lombok</artifactId>
+                                    <version>1.18.24</version>
+                                </path>
+                            </annotationProcessorPaths>
+                        </configuration>
+                    </plugin>
+                    <plugin>
+                        <groupId>org.eclipse.jkube</groupId>
+                        <artifactId>kubernetes-maven-plugin</artifactId>
+                        <version>1.12.0</version>
+                        <executions>
+                            <execution>
+                                <phase>package</phase>
+                                <goals>
+                                    <goal>build</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                        <configuration>
+                            <images>
+                                <image>
+                                    <name>${project.name}</name>
+                                </image>
+                            </images>
+                        </configuration>
+                    </plugin>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-failsafe-plugin</artifactId>
+                        <version>2.22.2</version>
+                        <executions>
+                            <execution>
+                                <goals>
+                                    <goal>integration-test</goal>
+                                    <goal>verify</goal>
+                                </goals>
+                            </execution>
+                        </executions>
                     </plugin>
                 </plugins>
             </build>
