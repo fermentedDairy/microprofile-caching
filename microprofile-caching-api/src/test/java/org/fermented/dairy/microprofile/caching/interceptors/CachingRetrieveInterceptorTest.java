@@ -19,6 +19,7 @@ import java.util.Arrays;
 import java.util.Map;
 import java.util.Optional;
 
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -56,6 +57,22 @@ class CachingRetrieveInterceptorTest {
         Object result = cachingRetrieveInterceptor.doCacheRetrieve(invocationContext);
 
         verify(cacheProviderMap.get("TestCacheProvider")).putIntoCache(1L, result, "TestCacheName", 300000L);
+
+    }
+
+    @DisplayName("given a key that is not in the cache and a fetch method with an optional return type then insert non null result into cache")
+    @Test
+    void givenAKeyThatIsNotInTheCacheAndAFetchMethodWithAnOptionalReturnTypeThenInsertNonNullResultIntoCache() throws Exception {
+        Method cachingMethod = Arrays.stream(CachingClass.class.getDeclaredMethods()).filter(method -> method.getName().equals("getOptionalCachedSingleParam")).findFirst().get();
+        when(invocationContext.getMethod()).thenReturn(cachingMethod);
+        when(invocationContext.getParameters()).thenReturn(new Object[]{1L});
+
+        when(cacheProviderMap.get("TestCacheProvider").getFromCache(1L, "", CachingClass.class)).thenReturn(Optional.empty());
+        when(invocationContext.proceed()).thenReturn(cachingClass.getOptionalCachedSingleParam(1L));
+        Object optionalResult = cachingRetrieveInterceptor.doCacheRetrieve(invocationContext);
+
+        assertTrue(((Optional)optionalResult).isPresent());
+        verify(cacheProviderMap.get("TestCacheProvider")).putIntoCache(1L, ((Optional)optionalResult).get(), "TestCacheName", 300000L);
 
     }
 }

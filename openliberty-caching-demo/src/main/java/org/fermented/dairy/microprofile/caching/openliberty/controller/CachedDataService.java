@@ -37,7 +37,7 @@ public class CachedDataService {
     /**
      * return the entity mapped to ID 1 (cached)
      * @param id, the ID of the entity
-     * @return
+     * @return Mapped TestEntity
      */
     @CacheRetrieve
     public TestEntity getTestEntityCached(@CacheKey Long id) {
@@ -50,9 +50,9 @@ public class CachedDataService {
     /**
      * return the entity mapped to ID 1 (cached)
      * @param id, the ID of the entity
-     * @return
+     * @return Optional Mapped TestEntity
      */
-    @CacheRetrieve
+    @CacheRetrieve(optionalWrappedClass = TestEntity.class)
     public Optional<TestEntity> getTestEntityCachedOptional(@CacheKey Long id) {
         if(!ENTITIES_MAP.containsKey(id) || ENTITIES_MAP.get(id) == null){
             return Optional.empty();
@@ -64,7 +64,7 @@ public class CachedDataService {
      * Alter and return the entity mapped to the id
      * @param id, The ID of the entity
      * @param name, The new name provided to the entity
-     * @return
+     * @return Mapped TestEntity
      */
     public TestEntity alterUncached(Long id, String name){
         TestEntity entity = ENTITIES_MAP.get(id);

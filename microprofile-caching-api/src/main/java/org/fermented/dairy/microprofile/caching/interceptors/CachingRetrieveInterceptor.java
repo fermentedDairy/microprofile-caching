@@ -28,9 +28,9 @@ public class CachingRetrieveInterceptor extends AbstractCachingInterceptor{
 
         Class<?> cacheClass = invocationContext.getMethod().getReturnType();
         boolean isOptional = false;
-        if (cacheClass == Optional.class)
+        if (Optional.class.isAssignableFrom(cacheClass))
         {
-            cacheClass = invocationContext.getMethod().getReturnType();
+            cacheClass = invocationContext.getMethod().getAnnotation(CacheRetrieve.class).optionalWrappedClass();
             isOptional = true;
         }
         CacheProvider cacheProvider = getProvider(cacheClass);
