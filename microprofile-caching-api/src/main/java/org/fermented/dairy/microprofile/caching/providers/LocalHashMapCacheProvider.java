@@ -5,6 +5,7 @@ import org.fermented.dairy.microprofile.caching.interfaces.CacheProvider;
 import java.lang.ref.SoftReference;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
+import java.util.Collection;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -51,6 +52,16 @@ public class LocalHashMapCacheProvider implements CacheProvider {
         Map<Object, SoftReference<CacheEntry>> cache = CACHES.get(cacheName);
         cache.remove(key);
         return true;
+    }
+
+    @Override
+    public Collection<String> getCacheNames() {
+        return CACHES.keySet();
+    }
+
+    @Override
+    public Collection<Object> getKeys(String cacheName) {
+        return CACHES.get(cacheName).keySet();
     }
 
     @Override

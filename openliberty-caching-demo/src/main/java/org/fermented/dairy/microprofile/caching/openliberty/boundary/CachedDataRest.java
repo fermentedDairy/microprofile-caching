@@ -13,8 +13,12 @@ import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
 import org.fermented.dairy.microprofile.caching.openliberty.controller.CachedDataService;
 import org.fermented.dairy.microprofile.caching.openliberty.entity.TestEntity;
+import org.fermented.dairy.microprofile.caching.providers.LocalHashMapCacheProvider;
 
+import java.util.Collection;
+import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 /**
  *
@@ -25,6 +29,9 @@ public class CachedDataRest {
 
     @Inject
     CachedDataService cachedDataService;
+
+    @Inject
+    LocalHashMapCacheProvider localHashMapCacheProvider;
 
     @GET
     @Path("/{id}")
@@ -41,6 +48,24 @@ public class CachedDataRest {
             throw new NotFoundException();
         }
         return cachedDataService.getTestEntityCached(id);
+    }
+
+    @GET
+    @Path("caches")
+    public Collection<String> getCacheNames(){
+        return localHashMapCacheProvider.getCacheNames();
+    }
+
+    @GET
+    @Path("caches/keys")
+    public Map<String, Collection<String>> getCacheNamesAndKeys(){
+        return localHashMapCacheProvider.getCacheNames().stream()
+                .collect(Collectors.toMap(
+                        cacheName -> cacheName,
+                        cacheName -> localHashMapCacheProvider.getKeys(cacheName).stream()
+                                .map(Object::toString)
+                                .collect(Collectors.toSet())
+                ));
     }
 
     @PUT
