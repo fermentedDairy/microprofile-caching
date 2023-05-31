@@ -15,5 +15,7 @@ public interface CacheProvider {
 
     Collection<Object> getKeys(String cacheName);
 
+    void clearCache(String cacheName);
+
     String getProviderName();
 }

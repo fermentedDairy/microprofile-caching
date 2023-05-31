@@ -23,12 +23,12 @@ public final class CacheInterceptorUtils {
         for (int outerIndex = 0; outerIndex < paramAnnotations.length; outerIndex++){
             Annotation[] annotationsForParam = paramAnnotations[outerIndex];
             for (int innerIndex = 0; innerIndex < annotationsForParam.length; innerIndex++){
-                if (annotationsForParam[innerIndex] instanceof CacheKey){
+                if (annotationsForParam[innerIndex].annotationType().equals(CacheKey.class)){
                     return invocationContext.getParameters()[outerIndex];
                 }
             }
         }
-        throw new NoCacheKeyException("Could not identify the cache key for method % in %", method.getName(), method.getDeclaringClass());
+        throw new NoCacheKeyException("Could not identify the cache key for method %s in %s", method.getName(), method.getDeclaringClass());
 
     }
 

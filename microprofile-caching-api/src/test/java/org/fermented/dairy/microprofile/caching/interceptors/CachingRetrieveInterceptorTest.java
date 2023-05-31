@@ -120,4 +120,26 @@ class CachingRetrieveInterceptorTest {
         verify(cacheProviderMap.get("TestCacheProvider"), never()).putIntoCache(1L, result, "TestCacheName", 300000L);
 
     }
+
+    @DisplayName("(Cache Hit) given a key that is in the cache and a fetch method with an optional return type and multiple parameters then return cached result")
+    @Test
+    void  givenAKeyThatIsInTheCacheAndAFetchMethodWithAnOptionalReturnTypeAndMultipleParametersThenReturnCachedResult() throws Exception {
+        Method cachingMethod = Arrays.stream(CachingClass.class.getDeclaredMethods()).filter(method -> method.getName().equals("getOptionalCachedMultiParam")).findFirst().get();
+        when(invocationContext.getMethod()).thenReturn(cachingMethod);
+        when(invocationContext.getParameters()).thenReturn(new Object[]{"dummyParam", 1L});
+
+        when(cacheProviderMap.get("TestCacheProvider").getFromCache(1L, "TestCacheName", CacheEntityWithProvider.class)).thenReturn(Optional.of(
+                CacheEntityWithProvider.builder()
+                        .id(1L)
+                        .name("firstName")
+                        .surname("surname")
+                        .build()
+        ));
+
+        Object optionalResult = cachingRetrieveInterceptor.doCacheRetrieve(invocationContext);
+
+        assertTrue(((Optional)optionalResult).isPresent());
+        verify(cacheProviderMap.get("TestCacheProvider"), never()).putIntoCache(1L, ((Optional)optionalResult).get(), "TestCacheName", 300000L);
+
+    }
 }

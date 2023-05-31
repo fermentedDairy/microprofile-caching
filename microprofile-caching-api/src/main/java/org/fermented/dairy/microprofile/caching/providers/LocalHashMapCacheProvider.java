@@ -6,6 +6,7 @@ import java.lang.ref.SoftReference;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -20,27 +21,23 @@ public class LocalHashMapCacheProvider implements CacheProvider {
 
     @Override
     public <T, K> Optional<T> getFromCache(K key, String cacheName, Class<T> tClass) {
-        if (CACHES.containsKey(cacheName) && CACHES.get(cacheName) != null) {
-            Map<Object, SoftReference<CacheEntry>> cache = CACHES.get(cacheName);
-            if (cache.containsKey(key)) {
-                SoftReference<CacheEntry> reference = cache.get(key);
-                if ( reference != null &&
-                        reference.get() != null &&
-                        Objects.requireNonNull(reference.get()).expiry().isAfter(LocalDateTime.now())) {
-                    return Optional.of((T) reference.get().value());
-                } else {
-                    cache.remove(key); //null value should be removed but are considered a cache miss
-                }
+        Map<Object, SoftReference<CacheEntry>> cache = getCache(cacheName);
+        if (cache.containsKey(key)) {
+            SoftReference<CacheEntry> reference = cache.get(key);
+            if (reference != null &&
+                    reference.get() != null &&
+                    Objects.requireNonNull(reference.get()).expiry().isAfter(LocalDateTime.now())) {
+                return Optional.of((T) reference.get().value());
+            } else {
+                cache.remove(key); //null value should be removed but are considered a cache miss
             }
-        } else {
-            CACHES.put(cacheName, new ConcurrentHashMap<>());
         }
         return Optional.empty();
     }
 
     @Override
     public <T, K> boolean putIntoCache(K key, T value, String cacheName, long ttl) {
-        Map<Object, SoftReference<CacheEntry>> cache = CACHES.get(cacheName);
+        Map<Object, SoftReference<CacheEntry>> cache = getCache(cacheName);
         cache.put(key, new SoftReference(
                 CacheEntry.buildCacheEntry(ttl, value)
         ));
@@ -49,7 +46,7 @@ public class LocalHashMapCacheProvider implements CacheProvider {
 
     @Override
     public <K> boolean invalidateCacheEntry(K key, String cacheName) {
-        Map<Object, SoftReference<CacheEntry>> cache = CACHES.get(cacheName);
+        Map<Object, SoftReference<CacheEntry>> cache = getCache(cacheName);
         cache.remove(key);
         return true;
     }
@@ -61,12 +58,30 @@ public class LocalHashMapCacheProvider implements CacheProvider {
 
     @Override
     public Collection<Object> getKeys(String cacheName) {
-        return CACHES.get(cacheName).keySet();
+        if (CACHES.containsKey(cacheName) && CACHES.get(cacheName) != null) {
+            return CACHES.get(cacheName).keySet();
+        }
+        return Collections.emptySet();
+    }
+
+    @Override
+    public void clearCache(String cacheName) {
+        if (CACHES.containsKey(cacheName) && CACHES.get(cacheName) != null) {
+            CACHES.get(cacheName).clear();
+        }
+
     }
 
     @Override
     public String getProviderName() {
         return "LocalHashMapCache";
+    }
+
+    private Map<Object, SoftReference<CacheEntry>> getCache(String cacheName) {
+        if (!CACHES.containsKey(cacheName) || CACHES.get(cacheName) == null) {
+            CACHES.put(cacheName, new ConcurrentHashMap<>());
+        }
+        return CACHES.get(cacheName);
     }
 
     private record CacheEntry(LocalDateTime expiry, Object value) {
