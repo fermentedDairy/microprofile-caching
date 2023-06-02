@@ -12,10 +12,6 @@ import lombok.extern.java.Log;
 import java.util.Optional;
 import java.util.logging.Level;
 
-import static org.fermented.dairy.microprofile.caching.utils.CacheInterceptorUtils.getCacheKeyFromParams;
-import static org.fermented.dairy.microprofile.caching.utils.CacheInterceptorUtils.getCacheName;
-import static org.fermented.dairy.microprofile.caching.utils.CacheInterceptorUtils.getTTL;
-
 @Dependent
 @Interceptor
 @Priority(Integer.MAX_VALUE)

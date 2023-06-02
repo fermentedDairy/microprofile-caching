@@ -2,6 +2,7 @@ package org.fermented.dairy.microprofile.caching.interceptors;
 
 import jakarta.interceptor.InvocationContext;
 import org.apache.commons.lang3.reflect.FieldUtils;
+import org.fermented.dairy.microprofile.caching.exceptions.NoCacheKeyException;
 import org.fermented.dairy.microprofile.caching.interfaces.CacheProvider;
 import org.fermented.dairy.microprofile.caching.test.entities.CacheEntityWithProvider;
 import org.fermented.dairy.microprofile.caching.test.entities.CachingClass;
@@ -20,6 +21,7 @@ import java.util.Arrays;
 import java.util.Map;
 import java.util.Optional;
 
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -140,6 +142,16 @@ class CachingRetrieveInterceptorTest {
 
         assertTrue(((Optional)optionalResult).isPresent());
         verify(cacheProviderMap.get("TestCacheProvider"), never()).putIntoCache(1L, ((Optional)optionalResult).get(), "TestCacheName", 300000L);
+
+    }
+
+    @DisplayName("(Cache Hit) given a key that is in the cache and a fetch method with an optional return type and multiple parameters without cache key then throw exception")
+    @Test
+    void  givenAKeyThatIsInTheCacheAndAFetchMethodWithAnOptionalReturnTypeAndMultipleParametersWithoutCacheKeyThenThrowException() throws Exception {
+        Method cachingMethod = Arrays.stream(CachingClass.class.getDeclaredMethods()).filter(method -> method.getName().equals("getOptionalCachedMultiParamMissingKey")).findFirst().get();
+        when(invocationContext.getMethod()).thenReturn(cachingMethod);
+
+        assertThrows(NoCacheKeyException.class, () -> cachingRetrieveInterceptor.doCacheRetrieve(invocationContext));
 
     }
 }

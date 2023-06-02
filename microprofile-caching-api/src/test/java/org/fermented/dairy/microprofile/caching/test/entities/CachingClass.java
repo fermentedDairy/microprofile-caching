@@ -36,4 +36,15 @@ public class CachingClass {
                         .build()
         );
     }
+
+    @CacheRetrieve(optionalWrappedClass = CacheEntityWithProvider.class)
+    public Optional<CacheEntityWithProvider> getOptionalCachedMultiParamMissingKey(String dummyParam, Long id){
+        return Optional.of(
+                CacheEntityWithProvider.builder()
+                        .id(id)
+                        .name("TestName")
+                        .surname("TestSurname")
+                        .build()
+        );
+    }
 }
