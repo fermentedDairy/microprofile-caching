@@ -1,6 +1,7 @@
 package org.fermented.dairy.microprofile.caching.openliberty.boundary;
 
 import jakarta.inject.Inject;
+import jakarta.enterprise.inject.Instance;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Positive;
 import jakarta.ws.rs.GET;
@@ -11,13 +12,15 @@ import jakarta.ws.rs.PathParam;
 
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
+import org.fermented.dairy.microprofile.caching.interfaces.CacheProvider;
 import org.fermented.dairy.microprofile.caching.openliberty.controller.CachedDataService;
 import org.fermented.dairy.microprofile.caching.openliberty.entity.TestEntity;
-import org.fermented.dairy.microprofile.caching.providers.LocalHashMapCacheProvider;
 
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 /**
@@ -31,7 +34,7 @@ public class CachedDataRest {
     CachedDataService cachedDataService;
 
     @Inject
-    LocalHashMapCacheProvider localHashMapCacheProvider;
+    Instance<CacheProvider> cacheProvider;
 
     @GET
     @Path("/{id}")
@@ -52,19 +55,28 @@ public class CachedDataRest {
 
     @GET
     @Path("caches")
-    public Collection<String> getCacheNames(){
-        return localHashMapCacheProvider.getCacheNames();
+    public Map<String, Collection<String>> getCacheNames(){
+        return cacheProvider.stream()
+                .collect(Collectors.toMap(
+                        CacheProvider::getProviderName,
+                        CacheProvider::getCacheNames
+                ));
     }
 
     @GET
     @Path("caches/keys")
-    public Map<String, Collection<String>> getCacheNamesAndKeys(){
-        return localHashMapCacheProvider.getCacheNames().stream()
+    public Map<String, Map<String, Collection<String>>> getCacheNamesAndKeys(){
+        return cacheProvider.stream()
                 .collect(Collectors.toMap(
-                        cacheName -> cacheName,
-                        cacheName -> localHashMapCacheProvider.getKeys(cacheName).stream()
-                                .map(Object::toString)
-                                .collect(Collectors.toSet())
+                        CacheProvider::getProviderName,
+                        provider ->
+                            provider.getCacheNames().stream()
+                                    .collect(Collectors.toMap(
+                                            Function.identity(),
+                                            cacheName -> provider.getKeys(cacheName).stream()
+                                                    .map(Object::toString)
+                                                    .toList()
+                                    ))
                 ));
     }
 
