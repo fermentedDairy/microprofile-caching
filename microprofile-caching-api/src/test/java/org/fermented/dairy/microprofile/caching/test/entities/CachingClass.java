@@ -1,6 +1,7 @@
 package org.fermented.dairy.microprofile.caching.test.entities;
 
 import org.fermented.dairy.microprofile.caching.annotations.CacheKey;
+import org.fermented.dairy.microprofile.caching.annotations.CacheRemove;
 import org.fermented.dairy.microprofile.caching.annotations.CacheRetrieve;
 import java.util.Optional;
 
@@ -46,5 +47,11 @@ public class CachingClass {
                         .surname("TestSurname")
                         .build()
         );
+    }
+
+    @CacheRemove(cacheClass = CacheEntityWithProvider.class)
+    public void removeCacheSingleParamNotObject(Long id)
+    {
+
     }
 }
