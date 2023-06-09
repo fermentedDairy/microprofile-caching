@@ -75,9 +75,13 @@ class CacheRemoveInterceptorTest {
     @DisplayName("when calling the remove method with multiple parameters one of which is annotated as the CacheKey then remove")
     @Test
     void whenCallingTheRemoveMethodWithMultipleParametersOneOfWhichIsAnnotatedAsTheCacheKeyThenRemove() throws Exception {
+        Method cachingMethod = Arrays.stream(CachingClass.class.getDeclaredMethods()).filter(method -> method.getName().equals("removeCacheMultiParamNotObjectAnnotated")).findFirst().get();
+        when(invocationContext.getMethod()).thenReturn(cachingMethod);
+        when(invocationContext.getParameters()).thenReturn(new Object[]{"dummy", 1L});
+
         cacheRemoveInterceptor.doCacheRemove(invocationContext);
 
         verify(invocationContext).proceed();
-        verify(cacheProviderMap.get("TestCacheProvider")).invalidateCacheEntry(1L, "cacheName");
+        verify(cacheProviderMap.get("TestCacheProvider")).invalidateCacheEntry(1L, "TestCacheName");
     }
 }

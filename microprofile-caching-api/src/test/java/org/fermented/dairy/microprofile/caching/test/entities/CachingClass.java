@@ -54,4 +54,10 @@ public class CachingClass {
     {
 
     }
+
+    @CacheRemove(cacheClass = CacheEntityWithProvider.class)
+    public void removeCacheMultiParamNotObjectAnnotated(String dummy, @CacheKey Long id)
+    {
+
+    }
 }
