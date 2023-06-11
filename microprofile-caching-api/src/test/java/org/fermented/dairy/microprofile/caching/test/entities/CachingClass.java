@@ -60,4 +60,28 @@ public class CachingClass {
     {
 
     }
+
+    @CacheRemove(cacheClass = CacheEntityWithProvider.class)
+    public void removeCacheMultiParamObjectAnnotated(Long id, CacheEntityWithProvider cacheEntityWithProvider)
+    {
+
+    }
+
+    @CacheRemove(cacheClass = CacheEntityWithProvider.class)
+    public void removeCacheSingleParamObject(CacheEntityWithProvider cacheEntityWithProvider)
+    {
+
+    }
+
+    @CacheRemove(cacheClass = CacheEntityWithProviderChild.class)
+    public void removeCacheSingleParamObjectChild(CacheEntityWithProviderChild cacheEntityWithProvider)
+    {
+
+    }
+
+    @CacheRemove(cacheClass = CacheEntityWithProviderNoKey.class)
+    public void removeCacheSingleParamObjectNoKey(CacheEntityWithProviderNoKey cacheEntityWithProvider)
+    {
+
+    }
 }

@@ -6,4 +6,7 @@ public class CacheRuntimeException extends RuntimeException{
         super(String.format(message, args));
     }
 
+    public CacheRuntimeException(Throwable causedBy, String message, Object... args){
+        super(String.format(message, args), causedBy);
+    }
 }

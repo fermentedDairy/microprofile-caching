@@ -30,7 +30,7 @@ public class CachingRetrieveInterceptor extends AbstractCachingInterceptor{
             isOptional = true;
         }
         CacheProvider cacheProvider = getProvider(cacheClass);
-        Object cacheKey = getCacheKeyFromParams(invocationContext);
+        Object cacheKey = getCacheKeyFromParams(invocationContext, cacheClass);
         String cacheName = getCacheName(cacheClass);
         Optional<?> cachedResultOptional = cacheProvider.getFromCache(cacheKey, cacheName, cacheClass);
         if(cachedResultOptional.isPresent()) {

@@ -23,7 +23,7 @@ public class CacheRemoveInterceptor extends AbstractCachingInterceptor{
         CacheRemove cacheRemove = invocationContext.getMethod().getAnnotation(CacheRemove.class);
         CacheProvider cacheProvider = getProvider(cacheRemove.cacheClass());
         String cacheName = getCacheName(cacheRemove.cacheClass());
-        Object cacheKey = getCacheKeyFromParams(invocationContext);
+        Object cacheKey = getCacheKeyFromParams(invocationContext, cacheRemove.cacheClass());
         cacheProvider.invalidateCacheEntry(cacheKey, cacheName);
         return result;
     }

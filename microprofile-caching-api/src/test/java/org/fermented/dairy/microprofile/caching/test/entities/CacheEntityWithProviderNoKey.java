@@ -1,19 +1,17 @@
 package org.fermented.dairy.microprofile.caching.test.entities;
 
+import lombok.Builder;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NonNull;
-import lombok.experimental.SuperBuilder;
 import org.fermented.dairy.microprofile.caching.annotations.Cachable;
-import org.fermented.dairy.microprofile.caching.annotations.CacheKey;
 
-@SuperBuilder
+@Builder
 @Getter
 @EqualsAndHashCode
 @Cachable(cacheName = "TestCacheName", cacheProvider = "TestCacheProvider")
-public class CacheEntityWithProvider {
+public class CacheEntityWithProviderNoKey {
 
-    @CacheKey
     @NonNull
     private Long id;
 
