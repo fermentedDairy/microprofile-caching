@@ -1,165 +1,199 @@
 package org.fermented.dairy.microprofile.caching.providers;
 
-import org.fermented.dairy.microprofile.caching.test.entities.CacheEntityWithProvider;
+import org.fermented.dairy.microprofile.caching.interfaces.CacheProvider;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-import java.util.Collections;
-import java.util.Optional;
-import java.util.stream.Collectors;
-
 import static org.junit.jupiter.api.Assertions.assertAll;
-import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-
 class LocalHashMapCacheProviderTest {
 
-    LocalHashMapCacheProvider provider = new LocalHashMapCacheProvider();
+    CacheProvider localHashMapCacheProvider = new LocalHashMapCacheProvider();
 
-    static final String CACHE_NAME = "testCacheName";
-
-    static final String CACHE_NAME_2 = "testCacheName2";
-
-    static final Long FIVE_MINUTES_IN_MILLIS = 300000L;
-
-    @DisplayName("given a key and value that aren't in the cache then add to cache and validate after retrieve")
+    //Missing Key put into cache, verify cache key preset, get from cache
+    @DisplayName("Given a Missing key then put the getter result into the cache, verify key is present and get from cache")
     @Test
-    void givenAKeyAndValueThatArentInTheCacheAddToCacheAndValidateRetrieve() {
-        CacheEntityWithProvider entity = CacheEntityWithProvider.builder()
-                .id(1L)
-                .name("first")
-                .surname("1st")
-                .build();
-        assertTrue(provider.getFromCache(entity.getId(), CACHE_NAME, CacheEntityWithProvider.class).isEmpty());
-        provider.putIntoCache(entity.getId(), entity, CACHE_NAME, FIVE_MINUTES_IN_MILLIS);
-        Optional<CacheEntityWithProvider> actual = provider.getFromCache(entity.getId(), CACHE_NAME, CacheEntityWithProvider.class);
-        assertAll(
-                "Validating Cache Record",
-                () -> assertTrue(actual.isPresent(), "cached entity is not present"),
-                () -> assertEquals(entity, actual.get(), "cached entity is not equal to inserted entity")
+    void givenAMissingKeyThenPutTheGetterResultIntoTheCacheVerifyKeyIsPresentAndGetFromCache(){
+        String cacheName = "testcache1";
+
+        String actual1 = localHashMapCacheProvider.loadAndGetFromCache(
+                "key1", cacheName, str -> "inserted 1", String.class, 500L
+
+        );
+        assertAll("Verify Cache Miss Insert",
+                () -> assertEquals("inserted 1", actual1, "incorrect value retrieved from getter"),
+                () -> assertTrue(localHashMapCacheProvider.getCacheNames().contains(cacheName), "Cache not present"),
+                () -> assertTrue(localHashMapCacheProvider.getKeys(cacheName).contains("key1"), "key not present")
+        );
+
+        String actual2 = localHashMapCacheProvider.loadAndGetFromCache(
+                "key1", cacheName, str -> "inserted 2", String.class, 500L
+
+        );
+
+        assertAll("Verify Cache Hit Fetch",
+                () -> assertEquals("inserted 1", actual2, "incorrect value retrieved from cache"),
+                () -> assertTrue(localHashMapCacheProvider.getCacheNames().contains(cacheName), "Cache not present"),
+                () -> assertTrue(localHashMapCacheProvider.getKeys(cacheName).contains("key1"), "key not present")
         );
     }
 
-    @DisplayName("given a key and value that aren't in the cache then add to cache, remove then validate remove")
+    @DisplayName("given a present key that is expired, remove it from cache, get new value")
     @Test
-    void givenAKeyAndValueThatAreInTheCacheAddToCacheRemoveAndValidateRemove() {
-        CacheEntityWithProvider entity = CacheEntityWithProvider.builder()
-                .id(2L)
-                .name("second")
-                .surname("2nd")
-                .build();
-        assertTrue(provider.getFromCache(entity.getId(), CACHE_NAME, CacheEntityWithProvider.class).isEmpty());
-        provider.putIntoCache(entity.getId(), entity, CACHE_NAME, FIVE_MINUTES_IN_MILLIS);
-        assertTrue(provider.getFromCache(
-                        entity.getId(),
-                        CACHE_NAME,
-                        CacheEntityWithProvider.class).isPresent(),
-                "cached entity is not present");
-        provider.invalidateCacheEntry(entity.getId(), CACHE_NAME);
-        assertTrue(provider.getFromCache(
-                        entity.getId(),
-                        CACHE_NAME,
-                        CacheEntityWithProvider.class).isEmpty(),
-                "cached entity is present");
+    void givenAPresentKeyThatIsExpiredRemoveItFromCacheVerifyKeyIsNotPresent() throws InterruptedException {
+        String cacheName = "testcache2";
+        String actual1 = localHashMapCacheProvider.loadAndGetFromCache(
+                "key1", cacheName, str -> "inserted 1", String.class, 10L
+
+        );
+        assertAll("Verify Cache Miss Insert",
+                () -> assertEquals("inserted 1", actual1, "incorrect value retrieved from getter"),
+                () -> assertTrue(localHashMapCacheProvider.getCacheNames().contains(cacheName), "Cache not present"),
+                () -> assertTrue(localHashMapCacheProvider.getKeys(cacheName).contains("key1"), "key is present")
+        );
+
+        //TODO: find a better way to sleep the thread
+        Thread.sleep(20L);//NOSONAR: java:S2925, might be a little fragile, but fine for now
+
+        String actual2 = localHashMapCacheProvider.loadAndGetFromCache(
+                "key1", cacheName, str -> "inserted 2", String.class, 500L
+
+        );
+
+        assertAll("Verify Cache Hit Fetch",
+                () -> assertEquals("inserted 2", actual2, "incorrect value retrieved from cache"),
+                () -> assertTrue(localHashMapCacheProvider.getCacheNames().contains(cacheName), "Cache not present"),
+                () -> assertTrue(localHashMapCacheProvider.getKeys(cacheName).contains("key1"), "key not present")
+        );
 
     }
 
-    @DisplayName("given a key and value that aren't in the cache then add to cache and retrieve after expiry, validate removal from cache")
+
+    @DisplayName("given a present key, remove it from cache, verify key is not present next fetch gets from loader")
     @Test
-    void givenAKeyAndValueThatArentInTheCacheThenAddToCacheAndRetrieveAfterExpiryValidateRemovalFromCache() throws InterruptedException {
-        CacheEntityWithProvider entity = CacheEntityWithProvider.builder()
-                .id(3L)
-                .name("third")
-                .surname("3rd")
-                .build();
-        assertTrue(provider.getFromCache(entity.getId(), CACHE_NAME, CacheEntityWithProvider.class).isEmpty(),
-                "Cached entity is present");
-        provider.putIntoCache(entity.getId(), entity, CACHE_NAME, 10);
-        assertTrue(provider.getFromCache(
-                        entity.getId(),
-                        CACHE_NAME,
-                        CacheEntityWithProvider.class).isPresent(),
-                "cached entity is not present");
-        //TODO: better way to pause for 15 ms for cache expiry
-        Thread.sleep(15);//NOSONAR: java:S29225, will fix this later
-        assertTrue(provider.getFromCache(
-                        entity.getId(),
-                        CACHE_NAME,
-                        CacheEntityWithProvider.class).isEmpty(),
-                "cached entity is present");
+    void givenAPresentKeyRemoveItFromCacheVerifyKeyIsNotPresentNextFetchGetsFromLoader() {
+        String cacheName = "testcache3";
+        String actual1 = localHashMapCacheProvider.loadAndGetFromCache(
+                "key1", cacheName, str -> "inserted 1", String.class, 500L
+
+        );
+        assertAll("Verify Cache Miss Insert",
+                () -> assertEquals("inserted 1", actual1, "incorrect value retrieved from getter"),
+                () -> assertTrue(localHashMapCacheProvider.getCacheNames().contains(cacheName), "Cache not present"),
+                () -> assertTrue(localHashMapCacheProvider.getKeys(cacheName).contains("key1"), "key not present")
+        );
+
+        localHashMapCacheProvider.invalidateCacheEntry(
+                "key1", cacheName
+        );
+
+        String actual2 = localHashMapCacheProvider.loadAndGetFromCache(
+                "key1", cacheName, str -> "inserted 2", String.class, 500L
+
+        );
+
+        assertAll("Verify Cache Miss Insert",
+                () -> assertEquals("inserted 2", actual2, "incorrect value retrieved from getter"),
+                () -> assertTrue(localHashMapCacheProvider.getCacheNames().contains(cacheName), "Cache not present"),
+                () -> assertTrue(localHashMapCacheProvider.getKeys(cacheName).contains("key1"), "key not present")
+        );
+
     }
 
-    @DisplayName("given existing caches then return the list of cache names when fetched")
+    //Missing key, remove is a no op, verify other keys are still present
+    @DisplayName("given a missing key, verify key is not present other keys not impacted next fetch gets from loader")
     @Test
-    void givenExistingCachesThenReturnTheListOfCacheNamesWhenFetched(){
-        CacheEntityWithProvider entity = CacheEntityWithProvider.builder()
-                .id(3L)
-                .name("third")
-                .surname("3rd")
-                .build();
-        provider.putIntoCache(entity.getId(), entity, CACHE_NAME, 5);
+    void givenAMissingKeyRemoveItFromCacheVerifyKeyIsNotPresentNextFetchGetsFromLoader() {
+        String cacheName = "testcache4";
+        String actual1 = localHashMapCacheProvider.loadAndGetFromCache(
+                "key1", cacheName, str -> "inserted 1", String.class, 500L
 
-        entity = CacheEntityWithProvider.builder()
-                .id(4L)
-                .name("Fourth")
-                .surname("4th")
-                .build();
-        provider.putIntoCache(entity.getId(), entity, CACHE_NAME_2, 5);
+        );
+        assertAll("Verify Cache Miss Insert",
+                () -> assertEquals("inserted 1", actual1, "incorrect value retrieved from getter"),
+                () -> assertTrue(localHashMapCacheProvider.getCacheNames().contains(cacheName), "Cache not present"),
+                () -> assertTrue(localHashMapCacheProvider.getKeys(cacheName).contains("key1"), "key not present")
+        );
 
-        assertArrayEquals(new String[]{CACHE_NAME, CACHE_NAME_2}, provider.getCacheNames().stream().sorted().toList().toArray(new String[0]));
+        localHashMapCacheProvider.invalidateCacheEntry(
+                "key2", cacheName
+        );
+
+        assertAll("Validate Cache Keys",
+                () -> assertTrue(localHashMapCacheProvider.getKeys(cacheName).contains("key1"), "key not present"),
+                () -> assertFalse(localHashMapCacheProvider.getKeys(cacheName).contains("key2"), "key present")
+        );
+
+        String actual2 = localHashMapCacheProvider.loadAndGetFromCache(
+                "key2", cacheName, str -> "inserted 2", String.class, 500L
+
+        );
+
+        assertAll("Verify Cache Miss Insert",
+                () -> assertEquals("inserted 2", actual2, "incorrect value retrieved from getter"),
+                () -> assertTrue(localHashMapCacheProvider.getCacheNames().contains(cacheName), "Cache not present"),
+                () -> assertTrue(localHashMapCacheProvider.getKeys(cacheName).contains("key2"), "key not present")
+        );
+
+        String actual3 = localHashMapCacheProvider.loadAndGetFromCache(
+                "key2", cacheName, str -> "inserted 3", String.class, 500L
+
+        );
+
+        assertAll("Verify Cache Miss Insert",
+                () -> assertEquals("inserted 2", actual3, "incorrect value retrieved from getter"),
+                () -> assertTrue(localHashMapCacheProvider.getCacheNames().contains(cacheName), "Cache not present"),
+                () -> assertTrue(localHashMapCacheProvider.getKeys(cacheName).contains("key2"), "key not present")
+        );
+
     }
 
-    @DisplayName("given existing caches then return keys associated with the caches when fetched")
+    //Add to cache, clear the cache
+    @DisplayName("given a cache with keys, clear cache, verify cache is empty")
     @Test
-    void givenExistingCachesThenReturnKeysAssociatedWithTheCachesWhenFetched(){
-        CacheEntityWithProvider entity = CacheEntityWithProvider.builder()
-                .id(3L)
-                .name("third")
-                .surname("3rd")
-                .build();
-        provider.putIntoCache(entity.getId(), entity, CACHE_NAME, 5);
+    void givenACacheWithKeysClearCacheVerifyCacheIsEmpty() {
+        String cacheName = "testcache5";
+        String actual = localHashMapCacheProvider.loadAndGetFromCache(
+                "key1", cacheName, str -> "inserted 1", String.class, 500L
 
-        entity = CacheEntityWithProvider.builder()
-                .id(4L)
-                .name("Fourth")
-                .surname("4th")
-                .build();
-        provider.putIntoCache(entity.getId(), entity, CACHE_NAME_2, 5);
-
-        assertAll("Validating keys",
-                () -> assertFalse(provider.getKeys(CACHE_NAME_2).isEmpty()),
-                () -> assertEquals(4L, provider.getKeys(CACHE_NAME_2).stream().findFirst().get()),
-                () -> assertFalse(provider.getKeys(CACHE_NAME).isEmpty()),
-                () -> assertTrue(provider.getKeys(CACHE_NAME).contains(3L))
+        );
+        assertAll("Verify Cache Miss Insert",
+                () -> assertEquals("inserted 1", actual, "incorrect value retrieved from getter"),
+                () -> assertTrue(localHashMapCacheProvider.getCacheNames().contains(cacheName), "Cache not present"),
+                () -> assertTrue(localHashMapCacheProvider.getKeys(cacheName).contains("key1"), "key not present")
         );
     }
 
-    @DisplayName("given existing caches then clear them when cleared")
+    @DisplayName("given a cache with keys when clearing cache then remove all keys")
     @Test
-    void givenExistingCachesThenClearThemWhenCleared(){
-        CacheEntityWithProvider entity = CacheEntityWithProvider.builder()
-                .id(3L)
-                .name("third")
-                .surname("3rd")
-                .build();
-        provider.putIntoCache(entity.getId(), entity, CACHE_NAME, 5);
+    void givenACacheWithKeysWhenClearingCacheThenRemoveAllKeys(){
 
-        entity = CacheEntityWithProvider.builder()
-                .id(4L)
-                .name("Fourth")
-                .surname("4th")
-                .build();
-        provider.putIntoCache(entity.getId(), entity, CACHE_NAME_2, 5);
+        String cacheName = "testcache6";
+        String actual1 = localHashMapCacheProvider.loadAndGetFromCache(
+                "key1", cacheName, str -> "inserted 1", String.class, 500L
 
-        provider.getCacheNames().stream().forEach(
-                cacheName -> {
-                    assertFalse(provider.getKeys(cacheName).isEmpty());
-                    provider.clearCache(cacheName);
-                    assertTrue(provider.getKeys(cacheName).isEmpty());
-                }
         );
+        assertAll("Verify Cache Miss Insert",
+                () -> assertEquals("inserted 1", actual1, "incorrect value retrieved from getter"),
+                () -> assertTrue(localHashMapCacheProvider.getCacheNames().contains(cacheName), "Cache not present"),
+                () -> assertTrue(localHashMapCacheProvider.getKeys(cacheName).contains("key1"), "key not present")
+        );
+
+        String actual2 = localHashMapCacheProvider.loadAndGetFromCache(
+                "key2", cacheName, str -> "inserted 2", String.class, 500L
+
+        );
+        assertAll("Verify Cache Miss Insert",
+                () -> assertEquals("inserted 2", actual2, "incorrect value retrieved from getter"),
+                () -> assertTrue(localHashMapCacheProvider.getCacheNames().contains(cacheName), "Cache not present"),
+                () -> assertTrue(localHashMapCacheProvider.getKeys(cacheName).contains("key1"), "key not present")
+        );
+
+        localHashMapCacheProvider.clearCache(cacheName);
+
+        assertTrue(localHashMapCacheProvider.getKeys(cacheName).isEmpty());
     }
 }
