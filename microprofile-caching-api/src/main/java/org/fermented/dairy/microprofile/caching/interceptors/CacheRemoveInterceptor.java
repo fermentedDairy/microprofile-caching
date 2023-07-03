@@ -16,8 +16,9 @@ import org.fermented.dairy.microprofile.caching.interfaces.CacheProvider;
 @Log
 public class CacheRemoveInterceptor extends AbstractCachingInterceptor{
 
+    @SuppressWarnings("UnusedReturnValue")
     @AroundInvoke
-    public Object doCacheRemove(InvocationContext invocationContext) throws Exception {
+    public Object doCacheRemove(final InvocationContext invocationContext) throws Exception {
         Object result = invocationContext.proceed();
 
         CacheRemove cacheRemove = invocationContext.getMethod().getAnnotation(CacheRemove.class);

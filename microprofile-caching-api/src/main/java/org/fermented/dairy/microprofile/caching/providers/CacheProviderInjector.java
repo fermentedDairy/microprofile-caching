@@ -10,7 +10,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 @ApplicationScoped
-public class CacheProviderProvider {
+public class CacheProviderInjector {
 
 
     @Produces

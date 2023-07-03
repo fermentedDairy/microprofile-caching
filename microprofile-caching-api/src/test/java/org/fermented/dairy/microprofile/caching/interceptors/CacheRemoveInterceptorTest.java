@@ -27,6 +27,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+@SuppressWarnings("OptionalGetWithoutIsPresent")
 @ExtendWith(MockitoExtension.class)
 class CacheRemoveInterceptorTest {
 
@@ -46,9 +47,9 @@ class CacheRemoveInterceptorTest {
         FieldUtils.writeField(cacheRemoveInterceptor, "defaultTTL", 300000L, true);
     }
 
-    @DisplayName("when calling the remove method with a single parameter that isn't the cached class then remove")
+    @DisplayName("when calling the remove method with a single parameter that is not the cached class then remove")
     @Test
-    void whenCallingTheRemoveMethodWithASingleParameterThatIsntTheCachedClassThenRemoveFromProvider() throws Exception {
+    void whenCallingTheRemoveMethodWithASingleParameterThatIsNotTheCachedClassThenRemoveFromProvider() throws Exception {
 
         Method cachingMethod = Arrays.stream(CachingClass.class.getDeclaredMethods()).filter(method -> method.getName().equals("removeCacheSingleParamNotObject")).findFirst().get();
         when(invocationContext.getMethod()).thenReturn(cachingMethod);
